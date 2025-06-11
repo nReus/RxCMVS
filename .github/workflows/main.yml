@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -25,7 +25,7 @@ jobs:
         run: cmake --build build --config Release
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cmvs_tools_build
           path: .bin/
