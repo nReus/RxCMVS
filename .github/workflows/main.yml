@@ -5,6 +5,7 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow_dispatch:   # <-- This enables manual runs from the GitHub UI
 
 jobs:
   build:
@@ -27,4 +28,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: cmvs_tools_build
-          path: build/.bin/
+          path: .bin/
