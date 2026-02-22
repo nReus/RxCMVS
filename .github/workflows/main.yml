@@ -5,7 +5,16 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-  workflow_dispatch:   # <-- This enables manual runs from the GitHub UI
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: 'Build configuration (Release or Debug)'
+        required: true
+        default: 'Release'
+      arch:
+        description: 'Target architecture (x64 or x86)'
+        required: true
+        default: 'x64'
 
 jobs:
   build:
@@ -21,10 +30,18 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Configure CMake
-        run: cmake -S . -B build
+        run: cmake -S . -B build -A ${{ inputs.arch }}
 
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build build --config ${{ inputs.configuration }}
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          if (-Not (Test-Path -Path .bin)) { New-Item -ItemType Directory -Path .bin | Out-Null }
+          Get-ChildItem -Path build -Include *.exe,*.dll,*.lib,*.pdb -Recurse -File | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination (Join-Path -Path (Convert-Path .bin) -ChildPath $_.Name) -Force
+          }
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
