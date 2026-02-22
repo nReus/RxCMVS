@@ -38,15 +38,32 @@ jobs:
       - name: Collect artifacts
         shell: pwsh
         run: |
-          if (-Not (Test-Path -Path .bin)) { New-Item -ItemType Directory -Path .bin | Out-Null }
-          Get-ChildItem -Path build -Include *.exe,*.dll,*.lib,*.pdb -Recurse -File | ForEach-Object {
-            Copy-Item -Path $_.FullName -Destination (Join-Path -Path (Convert-Path .bin) -ChildPath $_.Name) -Force
+          $out = 'artifact-out'
+          if (Test-Path $out) { Remove-Item -Recurse -Force $out }
+          New-Item -ItemType Directory -Path $out | Out-Null
+
+          # Copy from build/ (CMake intermediate outputs)
+          Get-ChildItem -Path build -Include *.exe,*.dll,*.lib,*.pdb -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination (Join-Path -Path (Convert-Path $out) -ChildPath $_.Name) -Force
           }
+
+          # Also copy from .bin where MSBuild may emit final artifacts (nested paths)
+          Get-ChildItem -Path .bin -Include *.exe,*.dll,*.lib,*.pdb -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination (Join-Path -Path (Convert-Path $out) -ChildPath $_.Name) -Force
+          }
+
+      - name: List collected artifacts (debug)
+        shell: pwsh
+        run: |
+          Write-Host 'artifact-out contents:'
+          Get-ChildItem -Path artifact-out -Recurse -File | ForEach-Object { Write-Host $_.FullName }
+          Write-Host '.bin contents (top-level):'
+          Get-ChildItem -Path .bin -Recurse -File | ForEach-Object { Write-Host $_.FullName }
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: cmvs_tools_build
           path: |
+            artifact-out/**
             .bin/**
-            build/**/Release/**
