@@ -47,4 +47,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cmvs_tools_build
-          path: .bin/
+          path: |
+            .bin/**
+            build/**/Release/**
